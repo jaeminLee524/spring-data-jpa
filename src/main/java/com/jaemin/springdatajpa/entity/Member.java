@@ -4,12 +4,18 @@ import lombok.*;
 
 import javax.persistence.*;
 
+import java.util.Locale;
+
 import static javax.persistence.FetchType.LAZY;
 
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @ToString(of = {"id", "username", "age"})
+@NamedQuery(
+        name= "Member.findByUsername",
+        query= "select m from Member m where m.username=:username"
+)
 public class Member {
 
     @Id @GeneratedValue
@@ -32,6 +38,11 @@ public class Member {
         if (team != null) {
             this.team = team;
         }
+    }
+
+    public Member(String username, int age) {
+        this.username = username;
+        this.age = age;
     }
 
     //연관관계 생성 메서드
