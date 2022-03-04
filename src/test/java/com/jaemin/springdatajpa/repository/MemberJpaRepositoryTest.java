@@ -1,6 +1,7 @@
 package com.jaemin.springdatajpa.repository;
 
 import com.jaemin.springdatajpa.entity.Member;
+import jdk.jfr.Description;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -70,5 +71,28 @@ class MemberJpaRepositoryTest {
         assertThat(result.get(0).getUsername()).isEqualTo("AAA");
         assertThat(result.get(0).getAge()).isEqualTo(20);
         assertThat(result.size()).isEqualTo(1);
+    }
+
+    @Description("paging_Test")
+    @Test
+    public void paging() {
+        memberJpaRepository.save(new Member("mem1", 10));
+        memberJpaRepository.save(new Member("mem2", 10));
+        memberJpaRepository.save(new Member("mem3", 10));
+        memberJpaRepository.save(new Member("mem4", 10));
+        memberJpaRepository.save(new Member("mem5", 10));
+        memberJpaRepository.save(new Member("mem6", 10));
+
+        int age = 10;
+        // 0번째 페이지부터
+        int offset = 0;
+        // 3개의 데이터로 제한
+        int limit = 3;
+        List<Member> members = memberJpaRepository.findByPaging(age, offset, limit);
+        long totalCount = memberJpaRepository.totalCount(age);
+
+        assertThat(members.size()).isEqualTo(3);
+        assertThat(totalCount).isEqualTo(5);
+
     }
 }
