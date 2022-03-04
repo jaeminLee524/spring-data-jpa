@@ -3,12 +3,14 @@ package com.jaemin.springdatajpa.repository;
 import com.jaemin.springdatajpa.dto.MemberDto;
 import com.jaemin.springdatajpa.entity.Member;
 import com.jaemin.springdatajpa.entity.Team;
+import jdk.jfr.Description;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -106,4 +108,17 @@ class MemberRepositoryTest {
         memberDto.stream().forEach(dto -> System.out.println("dto = " + dto));
     }
 
+    @Description("Collection In절 테스트")
+    @Test
+    public void findByNames() {
+        Member m1 = new Member("AAA", 10);
+        Member m2 = new Member("BBB", 20);
+
+        memberRepository.save(m1);
+        memberRepository.save(m2);
+
+        List<Member> usernameList = memberRepository.frindByNames(Arrays.asList("AAA", "BBB"));
+
+        usernameList.stream().forEach(s -> System.out.println("username = " + s));
+    }
 }
