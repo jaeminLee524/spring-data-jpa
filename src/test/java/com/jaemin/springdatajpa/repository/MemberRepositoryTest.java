@@ -19,6 +19,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
@@ -165,7 +166,7 @@ class MemberRepositoryTest {
 
         // when
         // total count query까지 실행
-        Slice<Member> page = memberRepository.findByAge2(age, pageRequest);
+        Slice<Member> page = memberRepository.findSliceByAge(age, pageRequest);
 
         // 절대 Entity를 그대로 노출해선 안된다 => dto로 변환해야 함
         Slice<MemberDto> EntitytoDto = page.map(member -> new MemberDto(member.getId(), member.getUsername(), null));
@@ -190,6 +191,7 @@ class MemberRepositoryTest {
         assertThat(page.hasNext()).isTrue();
     }
 
+    @Description("bulk_update_test")
     @Test
     public void bulkUpdate() {
         //given
@@ -210,4 +212,51 @@ class MemberRepositoryTest {
         //then
         assertThat(resultCount).isEqualTo(3);
     }
+
+    @Description("fetch join")
+    @Test
+    public void findMemberLazy() {
+        //given
+        //member1 -> teamA
+        //member2 -> teamB
+
+        Team teamA = new Team("teamA");
+        Team teamB = new Team("teamB");
+        teamRepository.save(teamA);
+        teamRepository.save(teamB);
+
+        Member member1 = new Member("member1", 10, teamA);
+        Member member2 = new Member("member2", 10, teamB);
+        memberRepository.save(member1);
+        memberRepository.save(member2);
+
+        em.flush();
+        em.clear();
+
+        //when
+        List<Member> members = memberRepository.findAll(); // N + 1 => EntityGraph(attri~team)을 통해 fetch join 가능
+//        List<Member> members = memberRepository.findMemberFetchJoin();
+
+        members.stream().forEach( m -> {
+            System.out.println("m.getUsername() = " + m.getUsername());
+            System.out.println("m.getTeam().getClass() = " + m.getTeam().getClass());
+            System.out.println("m.getTeam().getName() = " + m.getTeam().getName());
+        });
+
+    }
+
+    @Description("JPA Hint")
+    @Test
+    public void queryHint() {
+        Member member1 = new Member("member1", 10);// 영속성 컨텍스트에 저장
+        memberRepository.save(member1);
+        em.flush(); //보통 transaction commit 시점에 flush가 일어나지만 강제로 flush
+        em.clear();
+
+        Member findMember = memberRepository.findById(member1.getId()).get();
+        findMember.setUsername("member2");
+
+        em.flush();
+    }
+
 }
