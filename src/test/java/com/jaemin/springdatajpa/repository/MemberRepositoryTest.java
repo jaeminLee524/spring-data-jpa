@@ -8,8 +8,15 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.Sort;
+import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import java.util.Arrays;
 import java.util.List;
 
@@ -18,10 +25,12 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @Transactional
+@Rollback(value = false)
 class MemberRepositoryTest {
 
     @Autowired MemberRepository memberRepository;
     @Autowired TeamRepository teamRepository;
+    @PersistenceContext EntityManager em;
 
     @Test
     public void testMember() {
@@ -139,7 +148,66 @@ class MemberRepositoryTest {
         //}
 
         System.out.println("result.size() = " + result.size());
-
     }
 
+    @Description("springDataJpa-paging_Test")
+    @Test
+    public void paging() {
+        memberRepository.save(new Member("mem1", 10));
+        memberRepository.save(new Member("mem2", 10));
+        memberRepository.save(new Member("mem3", 10));
+        memberRepository.save(new Member("mem4", 10));
+        memberRepository.save(new Member("mem5", 10));
+        memberRepository.save(new Member("mem6", 10));
+
+        int age = 10;
+        PageRequest pageRequest = PageRequest.of(0, 3, Sort.by(Sort.Direction.DESC, "username"));
+
+        // when
+        // total count query까지 실행
+        Slice<Member> page = memberRepository.findByAge2(age, pageRequest);
+
+        // 절대 Entity를 그대로 노출해선 안된다 => dto로 변환해야 함
+        Slice<MemberDto> EntitytoDto = page.map(member -> new MemberDto(member.getId(), member.getUsername(), null));
+
+        //then
+        // paging으로 갖고온 데이터 추출
+        List<Member> content = page.getContent();
+        // totalCount
+        //long totalElements = page.getTotalElements(); //Slice에는 데이터를 갖고오지 않음
+
+        content.stream().forEach(m -> System.out.println("member = " + m));
+        //System.out.println("totalElements = " + totalElements);
+
+        assertThat(content.size()).isEqualTo(3);
+        // 전체 데이터 개수
+        //assertThat(totalElements).isEqualTo(6);
+        assertThat(page.getNumber()).isEqualTo(0);
+        //assertThat(page.getTotalPages()).isEqualTo(2); //Slice는 총 개수를 갖고오지 않음 limit + 1
+        // 첫번재 페이지 체크
+        assertThat(page.isFirst()).isTrue();
+        // 다음 페이지 존재여부 체크
+        assertThat(page.hasNext()).isTrue();
+    }
+
+    @Test
+    public void bulkUpdate() {
+        //given
+        memberRepository.save(new Member("member1", 10));
+        memberRepository.save(new Member("member2", 19));
+        memberRepository.save(new Member("member3", 20));
+        memberRepository.save(new Member("member4", 21));
+        memberRepository.save(new Member("member5", 41));
+
+        //when
+        int resultCount = memberRepository.bulkAgePlus(20); //bulk 연산 수행
+        em.flush(); // 혹시 남아있는, 변경되지 않은게 db에 반영
+        em.clear(); // 1차 캐시를 비움(영속성 컨텍스트)
+
+        Member member5 = memberRepository.findByUsername("member5");
+        System.out.println("member5 = " + member5);
+
+        //then
+        assertThat(resultCount).isEqualTo(3);
+    }
 }

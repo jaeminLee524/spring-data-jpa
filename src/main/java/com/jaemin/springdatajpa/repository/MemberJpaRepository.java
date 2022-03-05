@@ -57,7 +57,7 @@ public class MemberJpaRepository {
                 .getResultList();
     }
 
-    //paging
+    // paging
     public List<Member> findByPaging(int age, int offset, int limit) {
         return em.createQuery("select m from Member m where m.age=:age order by m.username desc", Member.class)
                 .setParameter("age", age)
@@ -66,10 +66,17 @@ public class MemberJpaRepository {
                 .getResultList();
     }
 
-    //total count (current / total)
+    // total count (current / total)
     public long totalCount(int age) {
-        return em.createQuery("select couont(m) from Member m where m.age=:age", long.class)
+        return em.createQuery("select count(m) from Member m where m.age=:age", long.class)
                 .setParameter("age", age)
                 .getSingleResult();
+    }
+
+    // bulk 수정 쿼리
+    public int bulkAgePlus(int age) {
+        return em.createQuery("update Member m set m.age = m.age + 1 where m.age >= :age")
+                .setParameter("age", age)
+                .executeUpdate();
     }
 }
