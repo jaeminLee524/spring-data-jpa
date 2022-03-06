@@ -263,6 +263,7 @@ class MemberRepositoryTest {
     @Test
     public void findMemberCustom() {
         List<Member> members = memberRepository.findMemberCustom();
-
     }
+
+
 }
