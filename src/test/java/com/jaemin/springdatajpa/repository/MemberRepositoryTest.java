@@ -253,10 +253,16 @@ class MemberRepositoryTest {
         em.flush(); //보통 transaction commit 시점에 flush가 일어나지만 강제로 flush
         em.clear();
 
-        Member findMember = memberRepository.findById(member1.getId()).get();
-        findMember.setUsername("member2");
+        Member findMember = memberRepository.findById(member1.getId()).orElseThrow(() ->
+                    new IllegalArgumentException("error")
+                );
 
         em.flush();
     }
 
+    @Test
+    public void findMemberCustom() {
+        List<Member> members = memberRepository.findMemberCustom();
+
+    }
 }
